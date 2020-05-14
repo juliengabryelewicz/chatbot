@@ -1,8 +1,9 @@
 #![recursion_limit="256"]
 #![feature(rustc_private)]
 
-mod intent;
 mod components;
+mod intent;
+mod search_regex;
 
 use anyhow::Error;
 use serde_derive::{Deserialize};
@@ -13,6 +14,7 @@ use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yew::services::ConsoleService;
 use intent::get_response_from_intent;
+use search_regex::get_response_from_regex;
 
 use self::{
     components::{
@@ -76,13 +78,14 @@ pub struct Model {
     link: ComponentLink<Model>,
     title: String,
     typing: bool,
+    last_message: String,
     messages: Vec<Message>,
     ft: Option<FetchTask>,
 }
 
 impl Model {
-    fn view_data(&self) -> Html { 
-        let messages = &self.messages;   
+    fn view_data(&self) -> Html {
+        let messages = &self.messages;
         if messages.len() > 0 {
             html! {
                 <div>
@@ -131,6 +134,7 @@ impl Component for Model {
             title: "Chat Title".to_string(),
             typing: false,
             messages: Vec::new(),
+            last_message: "".to_string(),
             ft: None,
         }
     }
@@ -138,22 +142,26 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::FetchData(val) => {
-                self.messages.push(Message{content: val.to_string(), r#type: "User".to_string(), created_by: "User".to_string()});
+                self.last_message=val.clone();
+                self.messages.push(Message{content: val.to_string(), r#type: "user".to_string(), created_by: "User".to_string()});
                 let nlu_task = self.fetch_nlu(val);
                 self.ft = Some(nlu_task);
             }
             Msg::FetchResponse(response) => {
                 self.typing = false;
                 if response.is_ok() {
-                    let data = response.map(|data| data.intent.intentName).ok();
+                    let data = response.map(|child| child).ok();
                     let intent_name = match data {
                         None => "".to_string(),
-                        Some(ref intentName) => intentName.to_string(),
+                        Some(ref child) => child.intent.intentName.to_string(),
                     };
-                    self.messages.push(Message{content: get_response_from_intent(intent_name), r#type: "Bot".to_string(), created_by: "Bot".to_string()});
+                    let slots = match data {
+                        None => Vec::new(),
+                        Some(ref child) => child.slots.iter().map(|grandchild| grandchild.rawValue.as_str()).collect(),
+                    };
+                    self.messages.push(Message{content: get_response_from_intent(intent_name, slots), r#type: "bot".to_string(), created_by: "Bot".to_string()});
                 } else {
-                    self.messages.push(Message{content: get_response_from_intent("".to_string()), r#type: "Bot".to_string(), created_by: "Bot".to_string()});
-                    self.console.log("ko");
+                    self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
                 }
             }
             Msg::Ignore => {
