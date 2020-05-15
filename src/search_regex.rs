@@ -18,7 +18,7 @@ pub fn get_response_from_regex(intent: String) -> String {
 	match captures.as_ref().map(|c| c.as_slice()) {
 		Some(["hello"]) => "hello to you".to_string(),
 		Some(["evening"]) => "good evening to you".to_string(),
-		_ => "Sorry, I do not understand your request".to_string(),
+		_ => "Sorry, I do not understand what you say".to_string(),
 	}
 
 }

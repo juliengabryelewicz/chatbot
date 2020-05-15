@@ -25,7 +25,8 @@ use self::{
 
 pub enum Msg {
     FetchData(String),
-    FetchResponse(Result<DataFromNlu, Error>),
+    FetchNlu(Result<DataFromNlu, Error>),
+    FetchRegex,
     Ignore
 }
 
@@ -80,6 +81,7 @@ pub struct Model {
     typing: bool,
     last_message: String,
     messages: Vec<Message>,
+    use_nlu: bool,
     ft: Option<FetchTask>,
 }
 
@@ -106,7 +108,7 @@ impl Model {
                 let (meta, Json(data)) = response.into_parts();
                 println!("META: {:?}, {:?}", meta, data);
                 if meta.status.is_success() {
-                    Msg::FetchResponse(data)
+                    Msg::FetchNlu(data)
                 } else {
                     Msg::Ignore
                 }
@@ -135,6 +137,7 @@ impl Component for Model {
             typing: false,
             messages: Vec::new(),
             last_message: "".to_string(),
+            use_nlu: true,
             ft: None,
         }
     }
@@ -144,10 +147,14 @@ impl Component for Model {
             Msg::FetchData(val) => {
                 self.last_message=val.clone();
                 self.messages.push(Message{content: val.to_string(), r#type: "user".to_string(), created_by: "User".to_string()});
-                let nlu_task = self.fetch_nlu(val);
-                self.ft = Some(nlu_task);
+                if self.use_nlu {
+                    let nlu_task = self.fetch_nlu(val);
+                    self.ft = Some(nlu_task);
+                }else{
+                    self.update(Msg::FetchRegex);
+                }
             }
-            Msg::FetchResponse(response) => {
+            Msg::FetchNlu(response) => {
                 self.typing = false;
                 if response.is_ok() {
                     let data = response.map(|child| child).ok();
@@ -161,9 +168,14 @@ impl Component for Model {
                     };
                     self.messages.push(Message{content: get_response_from_intent(intent_name, slots), r#type: "bot".to_string(), created_by: "Bot".to_string()});
                 } else {
-                    self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+                    self.messages.push(Message{content: get_response_from_intent("".to_string(), Vec::new()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
                 }
             }
+            Msg::FetchRegex => {
+                self.typing = false;
+                self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+            }
+
             Msg::Ignore => {
                 return false;
             }
