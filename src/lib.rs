@@ -24,9 +24,11 @@ use self::{
 };
 
 pub enum Msg {
-    FetchData(String),
+    BeforeFetchData(String),
+    FetchData,
     FetchNlu(Result<DataFromNlu, Error>),
     FetchRegex,
+    AfterFetchBot,
     Ignore
 }
 
@@ -144,11 +146,14 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::FetchData(val) => {
+            Msg::BeforeFetchData(val) => {
                 self.last_message=val.clone();
-                self.messages.push(Message{content: val.to_string(), r#type: "user".to_string(), created_by: "User".to_string()});
+                self.update(Msg::FetchData);
+            }
+            Msg::FetchData => {
+                self.messages.push(Message{content: self.last_message.to_string(), r#type: "user".to_string(), created_by: "User".to_string()});
                 if self.use_nlu {
-                    let nlu_task = self.fetch_nlu(val);
+                    let nlu_task = self.fetch_nlu(self.last_message.to_string());
                     self.ft = Some(nlu_task);
                 }else{
                     self.update(Msg::FetchRegex);
@@ -175,7 +180,9 @@ impl Component for Model {
                 self.typing = false;
                 self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
             }
-
+            Msg::AfterFetchBot => {
+                return false;
+            }
             Msg::Ignore => {
                 return false;
             }
@@ -197,7 +204,7 @@ impl Component for Model {
                     { self.view_data() }
                 </div>
                 <div class="chatbot_input">
-                    <ChatbotInput: onsignal=self.link.callback(Msg::FetchData) />
+                    <ChatbotInput: onsignal=self.link.callback(Msg::BeforeFetchData) />
                 </div>
             </div>
         }
