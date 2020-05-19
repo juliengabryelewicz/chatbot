@@ -103,6 +103,18 @@ impl Model {
         }
     }
 
+    fn view_typing(&self) -> Html {
+        if self.typing {
+            html! {
+                <div><p>{ "Robot is typing..." }</p></div>
+            }
+        }else{
+            html! {
+                <div></div>
+            }
+        }
+    }
+
     fn fetch_nlu(&mut self, message: String) -> yew::services::fetch::FetchTask {
         let message = &json!({"content": message.to_string()});
         let callback = self.link.callback(
@@ -175,10 +187,12 @@ impl Component for Model {
                 } else {
                     self.messages.push(Message{content: get_response_from_intent("".to_string(), Vec::new()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
                 }
+                self.update(Msg::AfterFetchBot);
             }
             Msg::FetchRegex => {
                 self.typing = false;
                 self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+                self.update(Msg::AfterFetchBot);
             }
             Msg::AfterFetchBot => {
                 return false;
@@ -202,6 +216,7 @@ impl Component for Model {
                 </div>
                 <div class="chatbot_messages">
                     { self.view_data() }
+                    { self.view_typing() }
                 </div>
                 <div class="chatbot_input">
                     <ChatbotInput: onsignal=self.link.callback(Msg::BeforeFetchData) />
