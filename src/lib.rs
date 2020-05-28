@@ -93,7 +93,7 @@ impl Model {
         if messages.len() > 0 {
             html! {
                 <div>
-                    { messages.iter().map(|message| view_message(&message.content, &message.r#type)).collect::<Html>() }
+                    { messages.iter().map(|message| view_message(&message.content, &message.r#type, &message.created_by)).collect::<Html>() }
                 </div>
             }
         } else {
@@ -163,7 +163,7 @@ impl Component for Model {
                 self.update(Msg::FetchData);
             }
             Msg::FetchData => {
-                self.messages.push(Message{content: self.last_message.to_string(), r#type: "user".to_string(), created_by: "User".to_string()});
+                self.messages.push(Message{content: self.last_message.to_string(), r#type: "simple_message".to_string(), created_by: "user".to_string()});
                 if self.use_nlu {
                     let nlu_task = self.fetch_nlu(self.last_message.to_string());
                     self.ft = Some(nlu_task);
@@ -183,9 +183,9 @@ impl Component for Model {
                         None => Vec::new(),
                         Some(ref child) => child.slots.iter().map(|grandchild| grandchild.rawValue.as_str()).collect(),
                     };
-                    self.messages.push(Message{content: get_response_from_intent(intent_name, slots), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+                    self.messages.push(Message{content: get_response_from_intent(intent_name, slots), r#type: "simple_message".to_string(), created_by: "bot".to_string()});
                 } else {
-                    self.messages.push(Message{content: get_response_from_intent("".to_string(), Vec::new()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+                    self.messages.push(Message{content: get_response_from_intent("".to_string(), Vec::new()), r#type: "simple_message".to_string(), created_by: "bot".to_string()});
                 }
                 self.update(Msg::AfterFetchBot);
             }
