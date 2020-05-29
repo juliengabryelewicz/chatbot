@@ -6,8 +6,6 @@ mod intent;
 mod search_regex;
 mod structs;
 
-use wasm_bindgen::prelude::*;
-use yew::prelude::*;
 use anyhow::Error;
 use serde_json::json;
 use std::string::ToString;
@@ -15,6 +13,10 @@ use yew::format::{Json};
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yew::services::ConsoleService;
+use yew::prelude::*;
+use wasm_bindgen::prelude::*;
+
+
 use intent::get_response_from_intent;
 use search_regex::get_response_from_regex;
 use structs::*;
