@@ -6,6 +6,8 @@ mod intent;
 mod search_regex;
 mod structs;
 
+use wasm_bindgen::prelude::*;
+use yew::prelude::*;
 use anyhow::Error;
 use serde_json::json;
 use std::string::ToString;
@@ -89,7 +91,7 @@ impl Model {
         let request = Request::builder()
             .method("POST")
             .header("Content-Type", "application/json")
-            .uri("http://localhost:8080/parse".to_string())
+            .uri("http://localhost:8081/parse".to_string())
             .body(Json(message))
             .unwrap();
         self.fetch_service.fetch_binary(request, callback).unwrap()
@@ -121,6 +123,7 @@ impl Component for Model {
                 self.update(Msg::FetchData);
             }
             Msg::FetchData => {
+                self.typing=true;
                 self.messages.push(Message{content: structs::ContentMessage{message:self.last_message.to_string(), choices: None}, created_by:"user".to_string(), r#type:"simple_message".to_string()});
                 if self.use_nlu {
                     let nlu_task = self.fetch_nlu(self.last_message.to_string());
@@ -182,4 +185,9 @@ impl Component for Model {
             </div>
         }
     }
+}
+
+#[wasm_bindgen(start)]
+pub fn main() {
+    App::<Model>::new().mount_to_body();
 }
