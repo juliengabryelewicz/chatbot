@@ -4,9 +4,9 @@
 mod components;
 mod intent;
 mod search_regex;
+mod structs;
 
 use anyhow::Error;
-use serde_derive::{Deserialize};
 use serde_json::json;
 use std::string::ToString;
 use yew::format::{Json};
@@ -15,6 +15,7 @@ use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yew::services::ConsoleService;
 use intent::get_response_from_intent;
 use search_regex::get_response_from_regex;
+use structs::*;
 
 use self::{
     components::{
@@ -30,49 +31,6 @@ pub enum Msg {
     FetchRegex,
     AfterFetchBot,
     Ignore
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ValueNlu {
-    kind: String,
-    value: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct RangeNlu {
-    start: i32,
-    end: i32
-}
-
-#[derive(Deserialize, Debug)]
-pub struct IntentNlu {
-    intentName: String,
-    confidenceScore: f32
-}
-
-#[derive(Deserialize, Debug)]
-pub struct SlotNlu {
-    rawValue: String,
-    r#value: ValueNlu,
-    alternatives: Vec<String>,
-    range: RangeNlu,
-    entity: String,
-    slotName: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct DataFromNlu {
-    input: String,
-    intent: IntentNlu,
-    slots: Vec<SlotNlu>,
-    alternatives: Vec<String>
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Message {
-    content: String,
-    created_by: String,
-    r#type: String,
 }
 
 pub struct Model {
@@ -163,7 +121,7 @@ impl Component for Model {
                 self.update(Msg::FetchData);
             }
             Msg::FetchData => {
-                self.messages.push(Message{content: self.last_message.to_string(), r#type: "simple_message".to_string(), created_by: "user".to_string()});
+                self.messages.push(Message{content: structs::ContentMessage{message:self.last_message.to_string(), choices: None}, created_by:"user".to_string(), r#type:"simple_message".to_string()});
                 if self.use_nlu {
                     let nlu_task = self.fetch_nlu(self.last_message.to_string());
                     self.ft = Some(nlu_task);
@@ -183,15 +141,15 @@ impl Component for Model {
                         None => Vec::new(),
                         Some(ref child) => child.slots.iter().map(|grandchild| grandchild.rawValue.as_str()).collect(),
                     };
-                    self.messages.push(Message{content: get_response_from_intent(intent_name, slots), r#type: "simple_message".to_string(), created_by: "bot".to_string()});
+                    self.messages.push(get_response_from_intent(intent_name, slots, "bot".to_string()));
                 } else {
-                    self.messages.push(Message{content: get_response_from_intent("".to_string(), Vec::new()), r#type: "simple_message".to_string(), created_by: "bot".to_string()});
+                    self.messages.push(get_response_from_intent("".to_string(), Vec::new(), "bot".to_string()));
                 }
                 self.update(Msg::AfterFetchBot);
             }
             Msg::FetchRegex => {
                 self.typing = false;
-                self.messages.push(Message{content: get_response_from_regex(self.last_message.to_string()), r#type: "bot".to_string(), created_by: "Bot".to_string()});
+                self.messages.push(Message{content: ContentMessage{message:get_response_from_regex(self.last_message.to_string()), choices: None}, created_by:"bot".to_string(), r#type:"simple_message".to_string()});
                 self.update(Msg::AfterFetchBot);
             }
             Msg::AfterFetchBot => {

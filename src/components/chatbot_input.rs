@@ -4,7 +4,7 @@ use yew::{html, Callback, Component, ComponentLink, Html, InputData, KeyPressEve
 
 pub struct ChatbotInput {
     link: ComponentLink<Self>,
-    value: String,
+    input_value: String,
     onsignal: Callback<String>,
 }
 
@@ -27,7 +27,7 @@ impl Component for ChatbotInput {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         ChatbotInput {
             link,
-            value: "".to_string(),
+            input_value: "".to_string(),
             onsignal: props.onsignal,
         }
     }
@@ -35,11 +35,11 @@ impl Component for ChatbotInput {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::UpdateSearchText(val) => {
-                self.value = val;
+                self.input_value = val;
             }
             Msg::Submit => {
-                let message = self.value.clone();
-                self.value="".to_string();
+                let message = self.input_value.clone();
+                self.input_value="".to_string();
                 self.onsignal.emit(message.to_string());
             }
             Msg::Ignore => {
@@ -62,7 +62,7 @@ impl Component for ChatbotInput {
                 type="text",
                 placeholder="Enter your message",
                 autocomplete="off",
-                value=&self.value,
+                value=&self.input_value,
                 oninput=self.link.callback(|e: InputData| { Msg::UpdateSearchText(e.value) }),
                 onkeypress=self.link.callback(|e: KeyPressEvent| {
                     if e.key() == "Enter" { Msg::Submit } else { Msg::Ignore }
