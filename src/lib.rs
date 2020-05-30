@@ -28,6 +28,31 @@ use self::{
     },
 };
 
+#[wasm_bindgen(module = "/chatbot_configuration.js")]
+extern "C" {
+    type ChatbotConfiguration;
+
+    #[wasm_bindgen(constructor)]
+    fn new() -> ChatbotConfiguration;
+
+    #[wasm_bindgen(method, getter)]
+    fn title(this: &ChatbotConfiguration) -> String;
+    #[wasm_bindgen(method, setter)]
+    fn set_title(this: &ChatbotConfiguration, title: String) -> ChatbotConfiguration;
+    #[wasm_bindgen(method, getter)]
+    fn typing_text(this: &ChatbotConfiguration) -> String;
+    #[wasm_bindgen(method, setter)]
+    fn set_typing_text(this: &ChatbotConfiguration, typing_text: String) -> ChatbotConfiguration;
+
+}
+
+// lifted from the `console_log` example
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 pub enum Msg {
     BeforeFetchData(String),
     FetchData,
@@ -43,6 +68,7 @@ pub struct Model {
     link: ComponentLink<Model>,
     title: String,
     typing: bool,
+    typing_text: String,
     last_message: String,
     messages: Vec<Message>,
     use_nlu: bool,
@@ -68,7 +94,7 @@ impl Model {
     fn view_typing(&self) -> Html {
         if self.typing {
             html! {
-                <div><p>{ "Robot is typing..." }</p></div>
+                <div><p>{ &self.typing_text }</p></div>
             }
         }else{
             html! {
@@ -105,12 +131,16 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+
+        let chatbot_configuration = ChatbotConfiguration::new();
+
         Self {
             fetch_service: FetchService::new(),
             console: ConsoleService::new(),
             link,
-            title: "Chat Title".to_string(),
+            title: chatbot_configuration.title(),
             typing: false,
+            typing_text: chatbot_configuration.typing_text(),
             messages: Vec::new(),
             last_message: "".to_string(),
             use_nlu: true,
