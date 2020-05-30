@@ -43,10 +43,17 @@ extern "C" {
     fn typing_text(this: &ChatbotConfiguration) -> String;
     #[wasm_bindgen(method, setter)]
     fn set_typing_text(this: &ChatbotConfiguration, typing_text: String) -> ChatbotConfiguration;
+    #[wasm_bindgen(method, getter)]
+    fn use_nlu(this: &ChatbotConfiguration) -> bool;
+    #[wasm_bindgen(method, setter)]
+    fn set_use_nlu(this: &ChatbotConfiguration, use_nlu: bool) -> ChatbotConfiguration;
+    #[wasm_bindgen(method, getter)]
+    fn nlu_url(this: &ChatbotConfiguration) -> String;
+    #[wasm_bindgen(method, setter)]
+    fn set_nlu_url(this: &ChatbotConfiguration, nlu_url: String) -> ChatbotConfiguration;
 
 }
 
-// lifted from the `console_log` example
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
@@ -71,6 +78,7 @@ pub struct Model {
     typing_text: String,
     last_message: String,
     messages: Vec<Message>,
+    nlu_url: String,
     use_nlu: bool,
     ft: Option<FetchTask>,
 }
@@ -119,7 +127,7 @@ impl Model {
         let request = Request::builder()
             .method("POST")
             .header("Content-Type", "application/json")
-            .uri("http://localhost:8081/parse".to_string())
+            .uri(self.nlu_url.to_string())
             .body(Json(message))
             .unwrap();
         self.fetch_service.fetch_binary(request, callback).unwrap()
@@ -142,8 +150,9 @@ impl Component for Model {
             typing: false,
             typing_text: chatbot_configuration.typing_text(),
             messages: Vec::new(),
+            nlu_url: chatbot_configuration.nlu_url(),
             last_message: "".to_string(),
-            use_nlu: true,
+            use_nlu: chatbot_configuration.use_nlu(),
             ft: None,
         }
     }
