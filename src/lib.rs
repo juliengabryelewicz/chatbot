@@ -51,7 +51,6 @@ extern "C" {
     fn nlu_url(this: &ChatbotConfiguration) -> String;
     #[wasm_bindgen(method, setter)]
     fn set_nlu_url(this: &ChatbotConfiguration, nlu_url: String) -> ChatbotConfiguration;
-
 }
 
 #[wasm_bindgen]
@@ -132,14 +131,12 @@ impl Model {
             .unwrap();
         self.fetch_service.fetch_binary(request, callback).unwrap()
     }
-
 }
 
 impl Component for Model {
     type Message = Msg;
     type Properties = ();
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-
         let chatbot_configuration = ChatbotConfiguration::new();
 
         Self {
@@ -185,9 +182,13 @@ impl Component for Model {
                         None => Vec::new(),
                         Some(ref child) => child.slots.iter().map(|grandchild| grandchild.rawValue.as_str()).collect(),
                     };
-                    self.messages.push(get_response_from_intent(intent_name, slots, "bot".to_string()));
+                    if intent_name != ""{
+                        self.messages.push(get_response_from_intent(intent_name, slots, "bot".to_string()));
+                    }else{
+                        self.update(Msg::FetchRegex);
+                    }
                 } else {
-                    self.messages.push(get_response_from_intent("".to_string(), Vec::new(), "bot".to_string()));
+                    self.update(Msg::FetchRegex);
                 }
                 self.update(Msg::AfterFetchBot);
             }

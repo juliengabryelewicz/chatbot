@@ -1,9 +1,9 @@
 export class ChatbotConfiguration {
     constructor() {
-        this._use_nlu = true;
         this._nlu_url = "http://localhost:8081/parse";
         this._title = "This is my chatbot";
         this._typing_text = "Robot is typing....";
+        this._use_nlu = true;
     }
 
     get title() {
